@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Examen Técnico Profesional - MINERD</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #f1f5f9; }
+        .option-card { transition: all 0.2s ease; cursor: pointer; }
+        .option-card:hover:not(.disabled) { border-color: #3b82f6; background-color: #f0f7ff; transform: translateX(5px); }
+        .correct { border-color: #10b981 !important; background-color: #ecfdf5 !important; }
+        .wrong { border-color: #ef4444 !important; background-color: #fef2f2 !important; }
+        .progress-bar { transition: width 0.4s ease-in-out; }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+
+<div id="app" class="max-w-4xl mx-auto">
+    <!-- PANTALLA INICIAL -->
+    <div id="start-screen" class="bg-white rounded-3xl shadow-xl p-8 text-center border border-slate-200">
+        <div class="w-20 h-20 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-6">
+            <i class="fas fa-file-signature text-3xl"></i>
+        </div>
+        <h1 class="text-3xl font-bold text-slate-800 mb-4">Evaluación de Competencias Técnicas</h1>
+        <p class="text-slate-600 mb-8 leading-relaxed">
+            Este examen consta de <strong>35 preguntas</strong> diseñadas para evaluar su conocimiento sobre la normativa educativa dominicana vigente, incluyendo Inclusión, Ética, Género y Estándares Profesionales.
+        </p>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8 text-sm">
+            <div class="p-4 bg-slate-50 rounded-xl border border-slate-100">
+                <i class="fas fa-clock text-blue-500 mb-2"></i>
+                <p class="font-bold">60 Minutos</p>
+                <p class="text-slate-500">Tiempo límite</p>
+            </div>
+            <div class="p-4 bg-slate-50 rounded-xl border border-slate-100">
+                <i class="fas fa-check-circle text-green-500 mb-2"></i>
+                <p class="font-bold">70% Requerido</p>
+                <p class="text-slate-500">Para aprobar</p>
+            </div>
+            <div class="p-4 bg-slate-50 rounded-xl border border-slate-100">
+                <i class="fas fa-layer-group text-purple-500 mb-2"></i>
+                <p class="font-bold">Multitemático</p>
+                <p class="text-slate-500">Ley 66-97 y más</p>
+            </div>
+        </div>
+        <button onclick="quiz.start()" class="w-full md:w-auto px-12 py-4 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-2xl transition-all shadow-lg">
+            Comenzar Evaluación
+        </button>
+    </div>
+
+    <!-- PANTALLA DE PREGUNTAS -->
+    <div id="quiz-screen" class="hidden">
+        <div class="flex justify-between items-center mb-6">
+            <div class="flex items-center gap-4 bg-white p-3 rounded-2xl shadow-sm border border-slate-200">
+                <div class="w-32 h-2 bg-slate-100 rounded-full overflow-hidden">
+                    <div id="progress-bar" class="progress-bar h-full bg-blue-600 w-0"></div>
+                </div>
+                <span id="counter" class="text-sm font-bold text-slate-500">1 / 35</span>
+            </div>
+            <div id="timer" class="bg-white p-3 rounded-2xl shadow-sm border border-slate-200 font-mono font-bold text-blue-600">
+                60:00
+            </div>
+        </div>
+
+        <div class="bg-white rounded-3xl shadow-xl border border-slate-200 p-6 md:p-10 mb-6">
+            <div id="category-tag" class="inline-block px-3 py-1 bg-blue-50 text-blue-600 text-[10px] font-bold uppercase rounded-full mb-4 tracking-widest">Normativa</div>
+            <h2 id="question-text" class="text-xl md:text-2xl font-bold text-slate-800 mb-8 leading-snug"></h2>
+            <div id="options" class="space-y-4"></div>
+        </div>
+
+        <div class="flex justify-end">
+            <button id="next-btn" onclick="quiz.next()" class="hidden px-10 py-4 bg-slate-800 hover:bg-slate-900 text-white font-bold rounded-2xl flex items-center gap-2 shadow-lg transition-all">
+                Siguiente <i class="fas fa-arrow-right"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- PANTALLA DE RESULTADOS -->
+    <div id="result-screen" class="hidden animate-fade-in">
+        <div class="bg-white rounded-3xl shadow-2xl overflow-hidden border border-slate-200">
+            <div id="res-header" class="p-10 text-center text-white">
+                <h2 class="text-3xl font-bold mb-2">Evaluación Finalizada</h2>
+                <p id="res-status" class="text-white/80"></p>
+            </div>
+            <div class="p-8">
+                <div class="flex flex-col items-center mb-10">
+                    <div class="text-6xl font-black text-slate-800 mb-2" id="res-score">0%</div>
+                    <div class="text-slate-400 font-bold uppercase tracking-widest text-xs">Puntuación Total</div>
+                </div>
+                
+                <div id="res-stats" class="grid grid-cols-2 gap-4 mb-8"></div>
+
+                <button onclick="location.reload()" class="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-2xl shadow-lg transition-all">
+                    Volver a Intentar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+const QUESTIONS = [
+    // ORDENANZA 05-2024 (INCLUSIÓN)
+    { cat: "Inclusión", q: "¿Cuál es el propósito fundamental de la Ordenanza 05-2024?", a: ["Eliminar la educación especial", "Establecer lineamientos para la educación inclusiva en el sistema dominicano", "Privatizar los centros de atención a la diversidad", "Reducir el currículo para estudiantes con discapacidad"], c: 1 },
+    { cat: "Inclusión", q: "Según la Ordenanza 05-2024, ¿qué son los Ajustes Curriculares Individualizados (ACI)?", a: ["Exámenes más fáciles", "Modificaciones programativas para responder a las NEAE que no se cubren con ajustes comunes", "Cambios en el uniforme escolar", "Reducción de horas de clase"], c: 1 },
+    { cat: "Inclusión", q: "¿Qué instancia transversaliza el enfoque de educación inclusiva según el Art. 26?", a: ["Dirección de Informática", "Dirección de Educación Especial", "Dirección de Pruebas Nacionales", "Asociación de Padres"], c: 1 },
+    { cat: "Inclusión", q: "El Art. 16 indica que el diseño de los ajustes curriculares es responsabilidad de:", a: ["Solo el director", "El docente de grado con apoyo del equipo de orientación y psicopedagogía", "Los padres de familia", "El Ministerio de Salud"], c: 1 },
+    { cat: "Inclusión", q: "La educación inclusiva se basa en el principio de:", a: ["Segregación", "Equidad, igualdad de oportunidades y diseño universal", "Promoción automática", "Estandarización absoluta"], c: 1 },
+    { cat: "Inclusión", q: "Según la Ordenanza, los estudiantes con NEAE deben ser inscritos en:", a: ["Solo escuelas especiales", "El centro educativo más cercano a su domicilio en igualdad de condiciones", "Centros nocturnos únicamente", "Escuelas de artes"], c: 1 },
+    { cat: "Inclusión", q: "¿Qué siglas representan a los estudiantes con Necesidades Especiales de Apoyo Educativo?", a: ["DRE", "NEAE", "MINERD", "CAD"], c: 1 },
+
+    // OD 22-2023 (CÓDIGO DE ÉTICA)
+    { cat: "Ética", q: "El Código de Ética (OD 22-2023) prohíbe explícitamente:", a: ["El uso de libros de texto", "Las relaciones sentimentales o amorosas entre docentes y estudiantes", "El uso de tiza", "Las reuniones de planificación"], c: 1 },
+    { cat: "Ética", q: "En cuanto a las redes sociales, el docente debe:", a: ["Seguir a todos sus alumnos en cuentas personales", "Mantener límites profesionales y evitar comunicaciones privadas no educativas", "Publicar fotos de los alumnos sin permiso", "Ignorar las normas de privacidad"], c: 1 },
+    { cat: "Ética", q: "Si un docente presencia un acto de acoso, según el código debe:", a: ["Esperar que los padres lo resuelvan", "Intervenir y reportar de inmediato siguiendo el protocolo", "Ignorarlo si es fuera del aula", "Tomar fotos y subirlas a Facebook"], c: 1 },
+    { cat: "Ética", q: "¿Cuál es una falta ética grave según la OD 22-2023?", a: ["Llegar 5 minutos tarde", "Solicitar dinero o favores a cambio de calificaciones", "Usar el uniforme azul", "Participar en cursos de capacitación"], c: 1 },
+    { cat: "Ética", q: "El transporte de estudiantes en vehículos particulares de docentes:", a: ["Está recomendado", "Está prohibido salvo emergencias extremas justificadas", "Es obligatorio", "Depende del precio de la gasolina"], c: 1 },
+    { cat: "Ética", q: "Los docentes deben ser modelos de:", a: ["Irresponsabilidad", "Integridad, honestidad y respeto a los derechos humanos", "Autoritarismo", "Aislamiento social"], c: 1 },
+    { cat: "Ética", q: "¿A quién protege primordialmente el Código de Ética?", a: ["A los proveedores de desayuno", "A los niños, niñas y adolescentes del sistema educativo", "Al Ministro de turno", "A los sindicatos"], c: 1 },
+
+    // OD 33-2019 (GÉNERO)
+    { cat: "Género", q: "La OD 33-2019 establece como prioridad:", a: ["El diseño e implementación de la política de género en el MINERD", "La enseñanza de idiomas", "El cambio de nombre de los centros", "La eliminación de las clases de religión"], c: 0 },
+    { cat: "Género", q: "El enfoque de igualdad de género busca erradicar:", a: ["Las matemáticas", "La discriminación y los estereotipos sexistas en la educación", "El uso de cuadernos", "La recreación"], c: 1 },
+    { cat: "Género", q: "La política de género es un eje transversal basado en:", a: ["La Ley de Tránsito", "La Estrategia Nacional de Desarrollo (Ley 1-12)", "Opiniones de redes sociales", "Decretos de 1950"], c: 1 },
+
+    // ESTÁNDARES PROFESIONALES (17-2014)
+    { cat: "Estándares", q: "El Estándar 1 se refiere a:", a: ["El sueldo docente", "El Desarrollo del Estudiante", "La infraestructura escolar", "La tecnología"], c: 1 },
+    { cat: "Estándares", q: "Un docente que domina su área y crea experiencias de aprendizaje significativas cumple el estándar de:", a: ["Gestión administrativa", "Dominio del Contenido", "Asistencia técnica", "Relaciones públicas"], c: 1 },
+    { cat: "Estándares", q: "La 'Planificación de la Instrucción' requiere que el docente apoye a cada estudiante en:", a: ["El cumplimiento de metas de aprendizaje", "La compra de útiles", "El trabajo doméstico", "La vida política"], c: 0 },
+    { cat: "Estándares", q: "El Estándar 8 (Evaluación) implica usar múltiples métodos para:", a: ["Sancionar alumnos", "Monitorear el progreso y guiar la toma de decisiones pedagógicas", "Clasificar a los alumnos por su nivel social", "Llenar formularios vacíos"], c: 1 },
+    { cat: "Estándares", q: "El docente debe participar en:", a: ["Aislamiento profesional", "Desarrollo profesional continuo y prácticas éticas", "Solo actividades remuneradas", "Venta de libros"], c: 1 },
+    { cat: "Estándares", q: "Crear un ambiente de aprendizaje seguro y colaborativo es el Estándar:", a: ["Ambientes de Aprendizaje", "Uso de recursos", "Políticas públicas", "Mantenimiento"], c: 0 },
+    { cat: "Estándares", q: "¿Cuántos estándares profesionales principales establece la Resolución 17-2014?", a: ["5", "11", "20", "15"], c: 1 },
+
+    // LEY 66-97 Y ESTATUTO
+    { cat: "Ley 66-97", q: "La educación en RD es un derecho permanente e irrenunciable según el Art.:", a: ["4", "100", "50", "1"], c: 0 },
+    { cat: "Ley 66-97", q: "El organismo máximo de decisión en política educativa es:", a: ["La ADP", "El Consejo Nacional de Educación", "El Senado", "La Cámara de Cuentas"], c: 1 },
+    { cat: "Ley 66-97", q: "La educación especial es considerada un:", a: ["Nivel", "Subsistema", "Grado", "Ciclo"], c: 1 },
+    { cat: "Ley 66-97", q: "El financiamiento de la educación pública no debe ser inferior al:", a: ["2% del PIB", "4% del PIB o 16% del gasto público (el que sea mayor)", "10% del PIB", "1% del PIB"], c: 1 },
+    { cat: "Ley 66-97", q: "Los padres tienen el derecho de:", a: ["No enviar a sus hijos a la escuela", "Elegir el tipo de educación para sus hijos menores", "Cobrar por las notas", "Ignorar las leyes"], c: 1 },
+    { cat: "Ley 66-97", q: "¿Qué nivel es obligatorio y gratuito en RD?", a: ["Solo el Inicial", "El Inicial, Primario y Secundario", "Solo el Universitario", "Ninguno"], c: 1 },
+    { cat: "Ley 66-97", q: "El currículo dominicano es:", a: ["Rígido y cerrado", "Abierto, flexible y participativo", "Copiado de otros países", "Un secreto de estado"], c: 1 },
+    { cat: "Ley 66-97", q: "La descentralización se manifiesta a través de:", a: ["Solo el Ministro", "Las Juntas Regionales, Distritales y de Centro", "Los alcaldes", "La policía escolar"], c: 1 },
+    { cat: "Ley 66-97", q: "Un deber del docente según el Estatuto es:", a: ["Llegar tarde", "Cumplir con el calendario y horario escolar", "Hacer huelgas todos los días", "No planificar"], c: 1 },
+    { cat: "Ley 66-97", q: "La evaluación de la calidad de la educación es responsabilidad de:", a: ["Los estudiantes", "El sistema de evaluación del MINERD", "Solo organismos internacionales", "La prensa"], c: 1 },
+    { cat: "Ley 66-97", q: "El título de docente se adquiere tras:", a: ["Un curso de un mes", "Estudios de nivel superior en instituciones reconocidas", "Herencia familiar", "Nombramiento político"], c: 1 }
+];
+
+const quiz = {
+    idx: 0,
+    score: 0,
+    time: 3600,
+    timer: null,
+    answered: false,
+
+    start() {
+        document.getElementById('start-screen').classList.add('hidden');
+        document.getElementById('quiz-screen').classList.remove('hidden');
+        this.render();
+        this.startTimer();
+    },
+
+    startTimer() {
+        this.timer = setInterval(() => {
+            this.time--;
+            const m = Math.floor(this.time / 60);
+            const s = this.time % 60;
+            document.getElementById('timer').innerText = `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+            if (this.time <= 0) this.finish();
+        }, 1000);
+    },
+
+    render() {
+        this.answered = false;
+        const q = QUESTIONS[this.idx];
+        document.getElementById('category-tag').innerText = q.cat;
+        document.getElementById('question-text').innerText = q.q;
+        document.getElementById('counter').innerText = `${this.idx + 1} / ${QUESTIONS.length}`;
+        document.getElementById('progress-bar').style.width = `${((this.idx + 1) / QUESTIONS.length) * 100}%`;
+        document.getElementById('next-btn').classList.add('hidden');
+
+        const opts = document.getElementById('options');
+        opts.innerHTML = '';
+        q.a.forEach((txt, i) => {
+            const div = document.createElement('div');
+            div.className = "option-card p-4 border-2 border-slate-100 rounded-2xl flex items-center gap-4 bg-white";
+            div.innerHTML = `
+                <div class="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center font-bold text-slate-500">${String.fromCharCode(65+i)}</div>
+                <div class="flex-1 font-medium text-slate-700">${txt}</div>
+            `;
+            div.onclick = () => this.check(i, div);
+            opts.appendChild(div);
+        });
+    },
+
+    check(i, el) {
+        if (this.answered) return;
+        this.answered = true;
+        const correct = QUESTIONS[this.idx].c;
+        const all = document.querySelectorAll('.option-card');
+        
+        all.forEach(card => card.classList.add('disabled', 'opacity-50'));
+
+        if (i === correct) {
+            this.score++;
+            el.classList.remove('opacity-50');
+            el.classList.add('correct');
+        } else {
+            el.classList.remove('opacity-50');
+            el.classList.add('wrong');
+            all[correct].classList.remove('opacity-50');
+            all[correct].classList.add('correct');
+        }
+        document.getElementById('next-btn').classList.remove('hidden');
+    },
+
+    next() {
+        if (this.idx < QUESTIONS.length - 1) {
+            this.idx++;
+            this.render();
+        } else {
+            this.finish();
+        }
+    },
+
+    finish() {
+        clearInterval(this.timer);
+        document.getElementById('quiz-screen').classList.add('hidden');
+        document.getElementById('result-screen').classList.remove('hidden');
+        
+        const perc = Math.round((this.score / QUESTIONS.length) * 100);
+        document.getElementById('res-score').innerText = `${perc}%`;
+        
+        const header = document.getElementById('res-header');
+        const status = document.getElementById('res-status');
+        
+        if (perc >= 70) {
+            header.className = "p-10 text-center text-white bg-green-500";
+            status.innerText = "¡Excelente! Has aprobado la evaluación técnica.";
+        } else {
+            header.className = "p-10 text-center text-white bg-red-500";
+            status.innerText = "No has alcanzado la puntuación mínima. Te recomendamos repasar la normativa.";
+        }
+
+        document.getElementById('res-stats').innerHTML = `
+            <div class="p-4 bg-slate-50 rounded-2xl text-center border border-slate-100">
+                <p class="text-xs font-bold text-slate-400 uppercase mb-1">Aciertos</p>
+                <p class="text-2xl font-bold text-green-600">${this.score}</p>
+            </div>
+            <div class="p-4 bg-slate-50 rounded-2xl text-center border border-slate-100">
+                <p class="text-xs font-bold text-slate-400 uppercase mb-1">Incorrectas</p>
+                <p class="text-2xl font-bold text-red-500">${QUESTIONS.length - this.score}</p>
+            </div>
+        `;
+    }
+};
+</script>
+
+</body>
+</html>
